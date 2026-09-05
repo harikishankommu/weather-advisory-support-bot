@@ -1,0 +1,116 @@
+# Child in extreme heat
+
+- id: VG-001
+  category: vulnerable_groups
+  severity: high
+  priority: 90
+
+  description: >
+    Young children may be more vulnerable to extreme heat during
+    outdoor activity.
+
+  intent_keywords:
+    - child
+    - children
+    - kid
+    - kids
+    - toddler
+    - baby
+
+  weather_conditions:
+    temperature_2m:
+      operator: ">="
+      value: 38
+
+  guidance: >
+    Avoid prolonged outdoor activity for children in extreme heat
+    and consider moving the activity to a cooler time.
+
+
+# Elderly person in extreme heat
+
+- id: VG-002
+  category: vulnerable_groups
+  severity: high
+  priority: 90
+
+  description: >
+    Older adults may face increased risk during periods of extreme
+    heat.
+
+  intent_keywords:
+    - elderly
+    - senior
+    - old person
+    - older adult
+    - grandfather
+    - grandmother
+
+  weather_conditions:
+    temperature_2m:
+      operator: ">="
+      value: 38
+
+  guidance: >
+    Limit outdoor activity for elderly individuals during extreme
+    heat and prefer cooler conditions where possible.
+
+
+# Pets in extreme heat
+
+- id: VG-003
+  category: vulnerable_groups
+  severity: medium
+  priority: 70
+
+  description: >
+    Pets can be vulnerable to prolonged outdoor exposure in very
+    hot weather.
+
+  intent_keywords:
+    - pet
+    - dog
+    - puppy
+    - cat
+    - walk my dog
+
+  weather_conditions:
+    temperature_2m:
+      operator: ">="
+      value: 35
+
+  guidance: >
+    Avoid prolonged outdoor activity for pets in very hot conditions
+    and choose a cooler time for walks or exercise.
+
+
+# Vulnerable group in heavy rain
+
+- id: VG-004
+  category: vulnerable_groups
+  severity: high
+  priority: 95
+
+  description: >
+    Heavy rainfall can create additional safety and mobility risks
+    for vulnerable individuals outdoors.
+
+  intent_keywords:
+    - child
+    - children
+    - elderly
+    - senior
+    - older adult
+    - pet
+    - dog
+    - baby
+
+  weather_conditions:
+    precipitation:
+      operator: ">="
+      value: 5
+
+  guidance: >
+    Avoid unnecessary outdoor activity for vulnerable individuals
+    during heavy rainfall because mobility and environmental risks
+    may be increased.

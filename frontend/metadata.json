@@ -1,0 +1,6 @@
+{
+  "name": "Weather Advisory Support Bot",
+  "description": "Live weather insights combined with policy-driven safety guidance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

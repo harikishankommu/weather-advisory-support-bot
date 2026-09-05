@@ -1,0 +1,150 @@
+# Severe weather override
+
+- id: WX-001
+  category: severe_weather
+  severity: critical
+  priority: 100
+
+  description: >
+    Severe weather conditions create a broad safety risk for
+    outdoor activities regardless of the specific activity.
+
+  intent_keywords:
+    - outdoor
+    - cycling
+    - biking
+    - walking
+    - running
+    - hiking
+    - picnic
+    - park
+    - exercise
+
+  weather_conditions:
+    precipitation:
+      operator: ">="
+      value: 10
+
+  guidance: >
+    Avoid outdoor activities while severe rainfall conditions are
+    present. The weather situation should be treated as a significant
+    safety concern regardless of the specific outdoor activity.
+
+
+# Extreme heat
+
+- id: EX-001
+  category: outdoor_exercise
+  severity: high
+  priority: 80
+
+  description: >
+    Very high temperatures can create a significant health and
+    safety risk during outdoor exercise.
+
+  intent_keywords:
+    - exercise
+    - running
+    - jogging
+    - walking
+    - workout
+    - cycling
+
+  weather_conditions:
+    temperature_2m:
+      operator: ">="
+      value: 40
+
+  guidance: >
+    Avoid strenuous outdoor exercise in extreme heat and consider
+    postponing the activity until conditions are cooler.
+
+
+# High UV exposure
+
+- id: EX-002
+  category: outdoor_exercise
+  severity: medium
+  priority: 60
+
+  description: >
+    Very high ultraviolet exposure can make prolonged unprotected
+    outdoor exercise unsafe.
+
+  intent_keywords:
+    - exercise
+    - running
+    - jogging
+    - walking
+    - workout
+    - cycling
+    - park
+
+  weather_conditions:
+    uv_index:
+      operator: ">="
+      value: 8
+
+  guidance: >
+    Limit prolonged unprotected outdoor activity. Use appropriate
+    sun protection and consider moving the activity to a lower-UV
+    time of day.
+
+
+# Strong wind and cycling
+
+- id: EX-003
+  category: outdoor_exercise
+  severity: high
+  priority: 85
+
+  description: >
+    Strong winds can affect balance, stability, and control while
+    cycling or riding a two-wheeler.
+
+  intent_keywords:
+    - cycling
+    - biking
+    - bicycle
+    - bike
+    - bike ride
+    - two-wheeler
+
+  weather_conditions:
+    wind_speed_10m:
+      operator: ">="
+      value: 40
+
+  guidance: >
+    Avoid cycling or riding a two-wheeler in strong winds because
+    vehicle control and stability may be affected.
+
+
+# Rain and outdoor exercise
+
+- id: EX-004
+  category: outdoor_exercise
+  severity: high
+  priority: 75
+
+  description: >
+    Significant rainfall can create slippery surfaces and poor
+    visibility during outdoor exercise.
+
+  intent_keywords:
+    - exercise
+    - running
+    - jogging
+    - walking
+    - workout
+    - cycling
+    - hiking
+
+  weather_conditions:
+    precipitation:
+      operator: ">="
+      value: 2
+
+  guidance: >
+    Postpone outdoor exercise because rainfall may create slippery
+    surfaces, reduced visibility, and unsafe conditions.

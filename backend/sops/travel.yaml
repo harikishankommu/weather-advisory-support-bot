@@ -1,0 +1,118 @@
+# Rain risk during travel
+
+- id: TR-001
+  category: travel
+  severity: medium
+  priority: 60
+
+  description: >
+    A high likelihood of rainfall may disrupt travel and create
+    delays or reduced visibility.
+
+  intent_keywords:
+    - travel
+    - commute
+    - driving
+    - drive
+    - journey
+    - trip
+    - ride
+
+  weather_conditions:
+    precipitation_probability:
+      operator: ">="
+      value: 70
+
+  guidance: >
+    Allow extra travel time and be prepared for possible delays
+    caused by rainfall and reduced visibility.
+
+
+# Strong wind during travel
+
+- id: TR-002
+  category: travel
+  severity: high
+  priority: 80
+
+  description: >
+    Very strong winds can create a safety risk during road travel,
+    particularly for motorcycles and other exposed vehicles.
+
+  intent_keywords:
+    - travel
+    - commute
+    - driving
+    - drive
+    - motorcycle
+    - scooter
+    - two-wheeler
+    - bike
+
+  weather_conditions:
+    wind_speed_10m:
+      operator: ">="
+      value: 50
+
+  guidance: >
+    Avoid unnecessary travel using two-wheeled or exposed vehicles
+    while very strong winds are present.
+
+
+# Picnic suitability - fuzzy scenario
+
+- id: TR-003
+  category: outdoor_leisure
+  severity: medium
+  priority: 50
+
+  description: >
+    Outdoor leisure activities such as picnics may not be suitable
+    when weather conditions are generally unfavorable.
+
+  intent_keywords:
+    - picnic
+    - outing
+    - outdoor lunch
+    - family outing
+    - park
+    - outdoor plan
+
+  weather_conditions:
+    precipitation:
+      operator: ">="
+      value: 1
+
+  guidance: >
+    Current conditions are not ideal for a picnic or similar outdoor
+    leisure activity. Consider postponing or choosing an indoor
+    alternative.
+
+
+# Outdoor event conditions
+
+- id: TR-004
+  category: outdoor_events
+  severity: medium
+  priority: 55
+
+  description: >
+    Rain and strong winds can affect the safety and practicality of
+    outdoor events.
+
+  intent_keywords:
+    - event
+    - concert
+    - festival
+    - outdoor event
+    - function
+    - gathering
+
+  weather_conditions:
+    wind_speed_10m:
+      operator: ">="
+      value: 35
+
+  guidance: >
+    Review local conditions before continuing with the outdoor event
+    because strong winds may affect safety and event operations.
