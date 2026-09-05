@@ -3,7 +3,7 @@ from time import sleep
 from threading import Lock
 
 import requests
-
+import time
 from backend.models import WeatherData
 
 
@@ -473,60 +473,85 @@ def get_weather(
     time_reference: str = "now",
 ) -> WeatherData | None:
     """
-    Fetch hourly weather data and select the
-    forecast hour closest to the requested time.
-
-    Results are cached temporarily to reduce
-    repeated Open-Meteo API calls.
+    Fetch hourly weather data from Open-Meteo and
+    select the forecast hour closest to the requested time.
     """
 
-    normalized_time = normalize_time_reference(
-        time_reference
-    )
-
-    cache_key = (
-        round(latitude, 4),
-        round(longitude, 4),
-        normalized_time,
-    )
-
-    now = datetime.now()
-
-    with CACHE_LOCK:
-
-        cached = WEATHER_CACHE.get(
-            cache_key
-        )
-
-    if cached:
-
-        cached_time, cached_weather = cached
-
-        if now - cached_time < CACHE_DURATION:
-
-            print(
-                "[WEATHER CACHE] Using cached "
-                "weather data."
-            )
-
-            return cached_weather
-
-    print(
-        "[WEATHER] Fetching weather for "
-        f"latitude={latitude}, "
-        f"longitude={longitude}"
-    )
-
-    data = fetch_weather_data(
-        latitude,
-        longitude,
-    )
-
-    if not data:
-
-        return None
+    params = {
+        "latitude": latitude,
+        "longitude": longitude,
+        "hourly": (
+            "temperature_2m,"
+            "wind_speed_10m,"
+            "precipitation,"
+            "precipitation_probability,"
+            "uv_index,"
+            "weather_code"
+        ),
+        "forecast_days": 3,
+        "timezone": "auto",
+    }
 
     try:
+
+        print(
+            "[WEATHER] Fetching weather for "
+            f"latitude={latitude}, "
+            f"longitude={longitude}"
+        )
+
+        max_retries = 3
+
+        response = None
+
+        for attempt in range(max_retries):
+
+            response = requests.get(
+                WEATHER_URL,
+                params=params,
+                timeout=15,
+            )
+
+            print(
+                f"[WEATHER] API status code: "
+                f"{response.status_code}"
+            )
+
+            # Success
+            if response.status_code == 200:
+                break
+
+            # Rate limited
+            if response.status_code == 429:
+
+                wait_time = 2 ** attempt
+
+                print(
+                    f"[WEATHER WARNING] Rate limited. "
+                    f"Retrying in {wait_time} seconds..."
+                )
+
+                time.sleep(wait_time)
+
+                continue
+
+            response.raise_for_status()
+
+        if response is None:
+
+            return None
+
+        if response.status_code != 200:
+
+            print(
+                "[WEATHER ERROR] "
+                f"Weather API failed after retries: "
+                f"{response.status_code}"
+            )
+
+            return None
+
+        data = response.json()
 
         hourly = data.get("hourly")
 
@@ -539,10 +564,7 @@ def get_weather(
 
             return None
 
-        times = hourly.get(
-            "time",
-            [],
-        )
+        times = hourly.get("time", [])
 
         if not times:
 
@@ -554,7 +576,7 @@ def get_weather(
             return None
 
         target_time = get_target_time(
-            normalized_time
+            time_reference
         )
 
         index = find_closest_hour_index(
@@ -576,19 +598,16 @@ def get_weather(
             if field not in hourly:
 
                 print(
-                    "[WEATHER ERROR] "
-                    f"Missing weather field: "
-                    f"{field}"
+                    f"[WEATHER ERROR] "
+                    f"Missing weather field: {field}"
                 )
 
                 return None
 
-            if index >= len(
-                hourly[field]
-            ):
+            if index >= len(hourly[field]):
 
                 print(
-                    "[WEATHER ERROR] "
+                    f"[WEATHER ERROR] "
                     f"Index {index} out of range "
                     f"for field: {field}"
                 )
@@ -622,31 +641,27 @@ def get_weather(
             ][index],
         )
 
-        with CACHE_LOCK:
-
-            WEATHER_CACHE[
-                cache_key
-            ] = (
-                datetime.now(),
-                weather,
-            )
-
         print(
-            "[WEATHER] Weather data retrieved:",
+            "[WEATHER] Weather data retrieved successfully:",
             weather,
         )
 
         return weather
 
-    except (
-        KeyError,
-        IndexError,
-        ValueError,
-    ) as error:
+    except requests.RequestException as error:
 
         print(
             f"[WEATHER ERROR] "
-            f"Weather parsing failed: {error}"
+            f"Weather API request failed: {error}"
+        )
+
+        return None
+
+    except (KeyError, IndexError, ValueError) as error:
+
+        print(
+            f"[WEATHER ERROR] "
+            f"Weather data processing failed: {error}"
         )
 
         return None
@@ -660,7 +675,6 @@ def get_weather(
         )
 
         return None
-
 
 # -------------------------------------------------
 # Complete pipeline
