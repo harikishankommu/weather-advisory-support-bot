@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -17,7 +18,11 @@ def get_coordinates(city: str) -> dict | None:
     """
 
     try:
-        print(f"[WEATHER] Searching coordinates for: {city}")
+
+        print(
+            f"[WEATHER] Searching coordinates for: {city}",
+            flush=True,
+        )
 
         response = requests.get(
             GEOCODING_URL,
@@ -30,6 +35,11 @@ def get_coordinates(city: str) -> dict | None:
             timeout=15,
         )
 
+        print(
+            f"[WEATHER] Geocoding status: {response.status_code}",
+            flush=True,
+        )
+
         response.raise_for_status()
 
         data = response.json()
@@ -37,9 +47,12 @@ def get_coordinates(city: str) -> dict | None:
         results = data.get("results")
 
         if not results:
+
             print(
-                f"[WEATHER] No coordinates found for city: {city}"
+                f"[WEATHER ERROR] No coordinates found for: {city}",
+                flush=True,
             )
+
             return None
 
         result = results[0]
@@ -53,8 +66,8 @@ def get_coordinates(city: str) -> dict | None:
         }
 
         print(
-            "[WEATHER] Location found:",
-            location,
+            f"[WEATHER] Location found: {location}",
+            flush=True,
         )
 
         return location
@@ -62,7 +75,8 @@ def get_coordinates(city: str) -> dict | None:
     except requests.RequestException as error:
 
         print(
-            f"[WEATHER ERROR] Geocoding request failed: {error}"
+            f"[WEATHER ERROR] Geocoding request failed: {error}",
+            flush=True,
         )
 
         return None
@@ -70,7 +84,8 @@ def get_coordinates(city: str) -> dict | None:
     except (KeyError, ValueError) as error:
 
         print(
-            f"[WEATHER ERROR] Invalid geocoding response: {error}"
+            f"[WEATHER ERROR] Invalid geocoding response: {error}",
+            flush=True,
         )
 
         return None
@@ -91,27 +106,54 @@ def normalize_time_reference(
 
 def get_target_time(
     time_reference: str | None,
+    timezone_name: str | None = None,
 ) -> datetime:
     """
-    Convert supported natural-language time references
+    Convert a natural-language time reference
     into a target datetime.
 
-    The returned datetime is naive because Open-Meteo hourly
-    timestamps are also returned as local naive timestamps when
-    timezone=auto is used.
+    The returned datetime is converted to a naive
+    local datetime because Open-Meteo hourly timestamps
+    are returned as local timestamps.
     """
-
-    now = datetime.now()
 
     time_reference = normalize_time_reference(
         time_reference
     )
 
+    try:
+
+        if timezone_name:
+
+            now = datetime.now(
+                ZoneInfo(timezone_name)
+            )
+
+        else:
+
+            now = datetime.now()
+
+    except Exception:
+
+        now = datetime.now()
+
+    # Convert timezone-aware datetime into naive local time
+    now = now.replace(
+        tzinfo=None
+    )
+
     print(
-        f"[WEATHER] Time reference: {time_reference}"
+        f"[WEATHER] Time reference: {time_reference}",
+        flush=True,
+    )
+
+    print(
+        f"[WEATHER] Local target timezone: {timezone_name}",
+        flush=True,
     )
 
     # Tomorrow
+
     if time_reference == "tomorrow":
 
         target = now + timedelta(days=1)
@@ -124,6 +166,7 @@ def get_target_time(
         )
 
     # Today
+
     if time_reference == "today":
 
         return now.replace(
@@ -134,6 +177,7 @@ def get_target_time(
         )
 
     # Morning
+
     if time_reference in [
         "morning",
         "this morning",
@@ -147,6 +191,7 @@ def get_target_time(
         )
 
     # Afternoon
+
     if time_reference in [
         "afternoon",
         "this afternoon",
@@ -160,6 +205,7 @@ def get_target_time(
         )
 
     # Evening
+
     if time_reference in [
         "evening",
         "this evening",
@@ -172,7 +218,8 @@ def get_target_time(
             microsecond=0,
         )
 
-    # Tonight
+    # Night
+
     if time_reference in [
         "night",
         "tonight",
@@ -186,7 +233,8 @@ def get_target_time(
             microsecond=0,
         )
 
-    # Default: current time
+    # Default: current local time
+
     return now
 
 
@@ -195,8 +243,8 @@ def find_closest_hour_index(
     target_time: datetime,
 ) -> int:
     """
-    Find the Open-Meteo forecast hour closest to
-    the requested target time.
+    Find the Open-Meteo forecast hour closest
+    to the requested target time.
     """
 
     if not hourly_times:
@@ -225,15 +273,14 @@ def find_closest_hour_index(
     )
 
     print(
-        "[WEATHER] Target time:",
-        target_time.isoformat(),
+        f"[WEATHER] Target time: {target_time.isoformat()}",
+        flush=True,
     )
 
     print(
-        "[WEATHER] Selected forecast time:",
-        parsed_times[
-            closest_index
-        ].isoformat(),
+        "[WEATHER] Selected forecast time: "
+        f"{parsed_times[closest_index].isoformat()}",
+        flush=True,
     )
 
     return closest_index
@@ -243,10 +290,11 @@ def get_weather(
     latitude: float,
     longitude: float,
     time_reference: str = "now",
+    timezone_name: str | None = None,
 ) -> WeatherData | None:
     """
-    Fetch hourly weather data from Open-Meteo and
-    select the forecast hour closest to the requested time.
+    Fetch hourly weather data from Open-Meteo
+    and select the hour closest to the requested time.
     """
 
     try:
@@ -254,7 +302,8 @@ def get_weather(
         print(
             "[WEATHER] Fetching weather for "
             f"latitude={latitude}, "
-            f"longitude={longitude}"
+            f"longitude={longitude}",
+            flush=True,
         )
 
         response = requests.get(
@@ -274,29 +323,43 @@ def get_weather(
 
                 "forecast_days": 3,
 
-                # Return timestamps in the
-                # local timezone of the location.
                 "timezone": "auto",
             },
             timeout=15,
         )
 
         print(
-            "[WEATHER] API status code:",
-            response.status_code,
+            f"[WEATHER] Weather API status: {response.status_code}",
+            flush=True,
         )
 
         response.raise_for_status()
 
         data = response.json()
 
+        # Log API error if Open-Meteo returns one
+
+        if "error" in data:
+
+            print(
+                f"[WEATHER ERROR] Open-Meteo error: {data}",
+                flush=True,
+            )
+
+            return None
+
         hourly = data.get("hourly")
 
         if not hourly:
 
             print(
-                "[WEATHER ERROR] "
-                "Hourly weather data is missing."
+                "[WEATHER ERROR] Hourly weather data is missing.",
+                flush=True,
+            )
+
+            print(
+                f"[WEATHER ERROR] Response: {data}",
+                flush=True,
             )
 
             return None
@@ -309,14 +372,22 @@ def get_weather(
         if not times:
 
             print(
-                "[WEATHER ERROR] "
-                "Hourly timestamps are missing."
+                "[WEATHER ERROR] Hourly timestamps are missing.",
+                flush=True,
             )
 
             return None
 
+        # Prefer the timezone returned by Open-Meteo
+
+        api_timezone = data.get(
+            "timezone",
+            timezone_name,
+        )
+
         target_time = get_target_time(
-            time_reference
+            time_reference,
+            api_timezone,
         )
 
         index = find_closest_hour_index(
@@ -324,8 +395,6 @@ def get_weather(
             target_time,
         )
 
-        # Validate that all expected weather arrays
-        # contain the selected index.
         required_fields = [
             "temperature_2m",
             "wind_speed_10m",
@@ -340,8 +409,8 @@ def get_weather(
             if field not in hourly:
 
                 print(
-                    f"[WEATHER ERROR] "
-                    f"Missing weather field: {field}"
+                    f"[WEATHER ERROR] Missing field: {field}",
+                    flush=True,
                 )
 
                 return None
@@ -349,9 +418,9 @@ def get_weather(
             if index >= len(hourly[field]):
 
                 print(
-                    f"[WEATHER ERROR] "
-                    f"Index {index} out of range "
-                    f"for field: {field}"
+                    f"[WEATHER ERROR] Index out of range "
+                    f"for field: {field}",
+                    flush=True,
                 )
 
                 return None
@@ -384,17 +453,26 @@ def get_weather(
         )
 
         print(
-            "[WEATHER] Weather data retrieved:",
-            weather,
+            f"[WEATHER] Weather data retrieved: {weather}",
+            flush=True,
         )
 
         return weather
 
+    except requests.Timeout as error:
+
+        print(
+            f"[WEATHER ERROR] Weather request timed out: {error}",
+            flush=True,
+        )
+
+        return None
+
     except requests.RequestException as error:
 
         print(
-            f"[WEATHER ERROR] "
-            f"Weather API request failed: {error}"
+            f"[WEATHER ERROR] Weather API request failed: {error}",
+            flush=True,
         )
 
         return None
@@ -402,8 +480,8 @@ def get_weather(
     except KeyError as error:
 
         print(
-            f"[WEATHER ERROR] "
-            f"Missing weather key: {error}"
+            f"[WEATHER ERROR] Missing weather key: {error}",
+            flush=True,
         )
 
         return None
@@ -411,8 +489,8 @@ def get_weather(
     except IndexError as error:
 
         print(
-            f"[WEATHER ERROR] "
-            f"Weather index error: {error}"
+            f"[WEATHER ERROR] Weather index error: {error}",
+            flush=True,
         )
 
         return None
@@ -420,8 +498,8 @@ def get_weather(
     except ValueError as error:
 
         print(
-            f"[WEATHER ERROR] "
-            f"Weather value error: {error}"
+            f"[WEATHER ERROR] Weather value error: {error}",
+            flush=True,
         )
 
         return None
@@ -429,8 +507,9 @@ def get_weather(
     except Exception as error:
 
         print(
-            f"[WEATHER ERROR] "
-            f"Unexpected error: {type(error).__name__}: {error}"
+            "[WEATHER ERROR] Unexpected error: "
+            f"{type(error).__name__}: {error}",
+            flush=True,
         )
 
         return None
@@ -457,16 +536,18 @@ def get_live_weather(
     """
 
     print(
-        "\n========== WEATHER PIPELINE =========="
+        "\n========== WEATHER PIPELINE ==========",
+        flush=True,
     )
 
     print(
-        f"[WEATHER] Requested city: {city}"
+        f"[WEATHER] Requested city: {city}",
+        flush=True,
     )
 
     print(
-        "[WEATHER] Requested time:",
-        time_reference,
+        f"[WEATHER] Requested time: {time_reference}",
+        flush=True,
     )
 
     coordinates = get_coordinates(
@@ -476,8 +557,8 @@ def get_live_weather(
     if not coordinates:
 
         print(
-            "[WEATHER ERROR] "
-            "Could not resolve city coordinates."
+            "[WEATHER ERROR] Could not resolve city coordinates.",
+            flush=True,
         )
 
         return None
@@ -486,13 +567,14 @@ def get_live_weather(
         latitude=coordinates["latitude"],
         longitude=coordinates["longitude"],
         time_reference=time_reference,
+        timezone_name=coordinates.get("timezone"),
     )
 
     if not weather:
 
         print(
-            "[WEATHER ERROR] "
-            "Could not retrieve weather data."
+            "[WEATHER ERROR] Could not retrieve weather data.",
+            flush=True,
         )
 
         return None
@@ -507,11 +589,13 @@ def get_live_weather(
     }
 
     print(
-        "[WEATHER] Pipeline completed successfully."
+        "[WEATHER] Pipeline completed successfully.",
+        flush=True,
     )
 
     print(
-        "======================================\n"
+        "======================================\n",
+        flush=True,
     )
 
     return result
