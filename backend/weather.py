@@ -12,10 +12,13 @@ WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 
 def get_coordinates(city: str) -> dict | None:
     """
-    Convert a city name into latitude and longitude.
+    Convert a city name into latitude and longitude
+    using the Open-Meteo Geocoding API.
     """
 
     try:
+        print(f"[WEATHER] Searching coordinates for: {city}")
+
         response = requests.get(
             GEOCODING_URL,
             params={
@@ -24,43 +27,91 @@ def get_coordinates(city: str) -> dict | None:
                 "language": "en",
                 "format": "json",
             },
-            timeout=10,
+            timeout=15,
         )
 
         response.raise_for_status()
 
         data = response.json()
 
-        if not data.get("results"):
+        results = data.get("results")
+
+        if not results:
+            print(
+                f"[WEATHER] No coordinates found for city: {city}"
+            )
             return None
 
-        result = data["results"][0]
+        result = results[0]
 
-        return {
+        location = {
             "latitude": result["latitude"],
             "longitude": result["longitude"],
-            "name": result.get("name"),
+            "name": result.get("name", city),
             "country": result.get("country"),
+            "timezone": result.get("timezone"),
         }
 
-    except requests.RequestException:
+        print(
+            "[WEATHER] Location found:",
+            location,
+        )
+
+        return location
+
+    except requests.RequestException as error:
+
+        print(
+            f"[WEATHER ERROR] Geocoding request failed: {error}"
+        )
+
+        return None
+
+    except (KeyError, ValueError) as error:
+
+        print(
+            f"[WEATHER ERROR] Invalid geocoding response: {error}"
+        )
+
         return None
 
 
+def normalize_time_reference(
+    time_reference: str | None,
+) -> str:
+    """
+    Normalize the extracted time reference.
+    """
+
+    if not time_reference:
+        return "now"
+
+    return time_reference.strip().lower()
+
+
 def get_target_time(
-    time_reference: str,
+    time_reference: str | None,
 ) -> datetime:
     """
-    Convert a simple natural-language time reference
+    Convert supported natural-language time references
     into a target datetime.
+
+    The returned datetime is naive because Open-Meteo hourly
+    timestamps are also returned as local naive timestamps when
+    timezone=auto is used.
     """
 
     now = datetime.now()
 
-    time_reference = (
-        time_reference or "now"
-    ).lower()
+    time_reference = normalize_time_reference(
+        time_reference
+    )
 
+    print(
+        f"[WEATHER] Time reference: {time_reference}"
+    )
+
+    # Tomorrow
     if time_reference == "tomorrow":
 
         target = now + timedelta(days=1)
@@ -72,6 +123,7 @@ def get_target_time(
             microsecond=0,
         )
 
+    # Today
     if time_reference == "today":
 
         return now.replace(
@@ -81,7 +133,11 @@ def get_target_time(
             microsecond=0,
         )
 
-    if time_reference == "this morning":
+    # Morning
+    if time_reference in [
+        "morning",
+        "this morning",
+    ]:
 
         return now.replace(
             hour=9,
@@ -90,7 +146,11 @@ def get_target_time(
             microsecond=0,
         )
 
-    if time_reference == "this afternoon":
+    # Afternoon
+    if time_reference in [
+        "afternoon",
+        "this afternoon",
+    ]:
 
         return now.replace(
             hour=15,
@@ -99,7 +159,11 @@ def get_target_time(
             microsecond=0,
         )
 
-    if time_reference == "this evening":
+    # Evening
+    if time_reference in [
+        "evening",
+        "this evening",
+    ]:
 
         return now.replace(
             hour=18,
@@ -108,7 +172,12 @@ def get_target_time(
             microsecond=0,
         )
 
-    if time_reference == "tonight":
+    # Tonight
+    if time_reference in [
+        "night",
+        "tonight",
+        "this night",
+    ]:
 
         return now.replace(
             hour=21,
@@ -117,6 +186,7 @@ def get_target_time(
             microsecond=0,
         )
 
+    # Default: current time
     return now
 
 
@@ -125,19 +195,45 @@ def find_closest_hour_index(
     target_time: datetime,
 ) -> int:
     """
-    Find the forecast hour closest to the requested time.
+    Find the Open-Meteo forecast hour closest to
+    the requested target time.
     """
 
-    parsed_times = [
-        datetime.fromisoformat(time)
-        for time in hourly_times
-    ]
+    if not hourly_times:
+
+        raise ValueError(
+            "Hourly weather timestamps are empty."
+        )
+
+    parsed_times = []
+
+    for time_string in hourly_times:
+
+        parsed_time = datetime.fromisoformat(
+            time_string
+        )
+
+        parsed_times.append(
+            parsed_time
+        )
 
     closest_index = min(
         range(len(parsed_times)),
         key=lambda index: abs(
             parsed_times[index] - target_time
         ),
+    )
+
+    print(
+        "[WEATHER] Target time:",
+        target_time.isoformat(),
+    )
+
+    print(
+        "[WEATHER] Selected forecast time:",
+        parsed_times[
+            closest_index
+        ].isoformat(),
     )
 
     return closest_index
@@ -149,17 +245,24 @@ def get_weather(
     time_reference: str = "now",
 ) -> WeatherData | None:
     """
-    Fetch weather forecast and select the hour
-    closest to the requested time.
+    Fetch hourly weather data from Open-Meteo and
+    select the forecast hour closest to the requested time.
     """
 
     try:
+
+        print(
+            "[WEATHER] Fetching weather for "
+            f"latitude={latitude}, "
+            f"longitude={longitude}"
+        )
 
         response = requests.get(
             WEATHER_URL,
             params={
                 "latitude": latitude,
                 "longitude": longitude,
+
                 "hourly": (
                     "temperature_2m,"
                     "wind_speed_10m,"
@@ -168,10 +271,19 @@ def get_weather(
                     "uv_index,"
                     "weather_code"
                 ),
+
                 "forecast_days": 3,
+
+                # Return timestamps in the
+                # local timezone of the location.
                 "timezone": "auto",
             },
-            timeout=10,
+            timeout=15,
+        )
+
+        print(
+            "[WEATHER] API status code:",
+            response.status_code,
         )
 
         response.raise_for_status()
@@ -181,23 +293,71 @@ def get_weather(
         hourly = data.get("hourly")
 
         if not hourly:
+
+            print(
+                "[WEATHER ERROR] "
+                "Hourly weather data is missing."
+            )
+
+            return None
+
+        times = hourly.get(
+            "time",
+            [],
+        )
+
+        if not times:
+
+            print(
+                "[WEATHER ERROR] "
+                "Hourly timestamps are missing."
+            )
+
             return None
 
         target_time = get_target_time(
             time_reference
         )
 
-        times = hourly.get("time", [])
-
-        if not times:
-            return None
-
         index = find_closest_hour_index(
             times,
             target_time,
         )
 
-        return WeatherData(
+        # Validate that all expected weather arrays
+        # contain the selected index.
+        required_fields = [
+            "temperature_2m",
+            "wind_speed_10m",
+            "precipitation",
+            "precipitation_probability",
+            "uv_index",
+            "weather_code",
+        ]
+
+        for field in required_fields:
+
+            if field not in hourly:
+
+                print(
+                    f"[WEATHER ERROR] "
+                    f"Missing weather field: {field}"
+                )
+
+                return None
+
+            if index >= len(hourly[field]):
+
+                print(
+                    f"[WEATHER ERROR] "
+                    f"Index {index} out of range "
+                    f"for field: {field}"
+                )
+
+                return None
+
+        weather = WeatherData(
+
             temperature_2m=hourly[
                 "temperature_2m"
             ][index],
@@ -223,12 +383,56 @@ def get_weather(
             ][index],
         )
 
-    except (
-        requests.RequestException,
-        KeyError,
-        IndexError,
-        ValueError,
-    ):
+        print(
+            "[WEATHER] Weather data retrieved:",
+            weather,
+        )
+
+        return weather
+
+    except requests.RequestException as error:
+
+        print(
+            f"[WEATHER ERROR] "
+            f"Weather API request failed: {error}"
+        )
+
+        return None
+
+    except KeyError as error:
+
+        print(
+            f"[WEATHER ERROR] "
+            f"Missing weather key: {error}"
+        )
+
+        return None
+
+    except IndexError as error:
+
+        print(
+            f"[WEATHER ERROR] "
+            f"Weather index error: {error}"
+        )
+
+        return None
+
+    except ValueError as error:
+
+        print(
+            f"[WEATHER ERROR] "
+            f"Weather value error: {error}"
+        )
+
+        return None
+
+    except Exception as error:
+
+        print(
+            f"[WEATHER ERROR] "
+            f"Unexpected error: {type(error).__name__}: {error}"
+        )
+
         return None
 
 
@@ -237,33 +441,77 @@ def get_live_weather(
     time_reference: str = "now",
 ) -> dict | None:
     """
-    Complete weather pipeline.
+    Complete live weather pipeline.
 
-    City
-        ↓
-    Coordinates
-        ↓
-    Forecast
-        ↓
-    Requested time
+        City
+          ↓
+        Geocoding
+          ↓
+        Latitude / Longitude
+          ↓
+        Open-Meteo Forecast
+          ↓
+        Select requested time
+          ↓
+        WeatherData
     """
 
-    coordinates = get_coordinates(city)
+    print(
+        "\n========== WEATHER PIPELINE =========="
+    )
 
-    if not coordinates:
-        return None
+    print(
+        f"[WEATHER] Requested city: {city}"
+    )
 
-    weather = get_weather(
-        coordinates["latitude"],
-        coordinates["longitude"],
+    print(
+        "[WEATHER] Requested time:",
         time_reference,
     )
 
-    if not weather:
+    coordinates = get_coordinates(
+        city
+    )
+
+    if not coordinates:
+
+        print(
+            "[WEATHER ERROR] "
+            "Could not resolve city coordinates."
+        )
+
         return None
 
-    return {
+    weather = get_weather(
+        latitude=coordinates["latitude"],
+        longitude=coordinates["longitude"],
+        time_reference=time_reference,
+    )
+
+    if not weather:
+
+        print(
+            "[WEATHER ERROR] "
+            "Could not retrieve weather data."
+        )
+
+        return None
+
+    result = {
+
         "location": coordinates,
+
         "weather": weather,
+
         "time_reference": time_reference,
     }
+
+    print(
+        "[WEATHER] Pipeline completed successfully."
+    )
+
+    print(
+        "======================================\n"
+    )
+
+    return result
