@@ -116,3 +116,33 @@
   guidance: >
     Review local conditions before continuing with the outdoor event
     because strong winds may affect safety and event operations.
+
+
+# Normal / suitable picnic conditions
+
+- id: TR-005
+  category: outdoor_leisure
+  severity: low
+  priority: 10
+
+  description: >
+    Outdoor leisure conditions are generally suitable when no
+    higher-priority weather safety policy applies.
+
+  intent_keywords:
+    - picnic
+    - outing
+    - outdoor lunch
+    - family outing
+    - park
+    - outdoor plan
+
+  weather_conditions:
+    precipitation:
+      operator: "<"
+      value: 1
+
+  guidance: >
+    Conditions appear generally suitable for a picnic or outdoor
+    leisure activity. Take normal precautions and remain aware of
+    changing local weather conditions.
