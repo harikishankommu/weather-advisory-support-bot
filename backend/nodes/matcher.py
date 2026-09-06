@@ -162,7 +162,18 @@ def match_sop_node(state: dict) -> dict:
     context = state["context"]
     weather = state["weather"]
 
+    print("\n========== SOP MATCHER ==========")
+
+    print("[MATCHER] Context:")
+    print(context)
+
+    print("[MATCHER] Weather:")
+    print(weather)
+
     sops = load_sops()
+
+    print("[MATCHER] Loaded SOPs:")
+    print(list(sops.keys()))
 
     matches = find_matching_sops(
         context,
@@ -170,7 +181,25 @@ def match_sop_node(state: dict) -> dict:
         sops,
     )
 
+    print("[MATCHER] Matching SOPs:")
+
+    for sop in matches:
+        print(
+            f"- {sop.id} | "
+            f"severity={sop.severity} | "
+            f"priority={sop.priority}"
+        )
+
     selected_sop = select_best_sop(matches)
+
+    print("[MATCHER] Selected SOP:")
+
+    if selected_sop:
+        print(selected_sop.id)
+    else:
+        print("None")
+
+    print("=================================\n")
 
     return {
         **state,
