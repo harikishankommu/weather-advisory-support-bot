@@ -560,13 +560,10 @@ def get_weather(
     # --------------------------------------------------------
 
     cache_key = (
-
         f"{latitude}:"
-
         f"{longitude}:"
-
-        f"{normalize_time_reference(time_reference)}"
-
+        f"{normalize_time_reference(time_reference)}:"
+        f"{timezone_name}"
     )
 
     # --------------------------------------------------------
@@ -586,23 +583,16 @@ def get_weather(
     if cached_weather:
 
         print(
-
             "[WEATHER CACHE] "
-
             "Using cached weather data."
-
         )
 
         return cached_weather
 
     print(
-
         "[WEATHER] Fetching weather for "
-
         f"latitude={latitude}, "
-
         f"longitude={longitude}"
-
     )
 
     # --------------------------------------------------------
@@ -646,11 +636,8 @@ def get_weather(
     if not response:
 
         print(
-
             "[WEATHER ERROR] "
-
             "Could not retrieve weather data."
-
         )
 
         return None
@@ -666,11 +653,8 @@ def get_weather(
         if not hourly:
 
             print(
-
                 "[WEATHER ERROR] "
-
                 "Hourly weather data is missing."
-
             )
 
             return None
@@ -798,6 +782,67 @@ def get_weather(
         )
 
         # ----------------------------------------------------
+        # PRINT WEATHER RESULT
+        # ----------------------------------------------------
+
+        print(
+            "\n========== WEATHER RESULT =========="
+        )
+
+        print(
+            f"[WEATHER] Time reference: "
+            f"{time_reference}"
+        )
+
+        print(
+            f"[WEATHER] Timezone: "
+            f"{timezone_name}"
+        )
+
+        print(
+            f"[WEATHER] Selected hour: "
+            f"{times[index]}"
+        )
+
+        print(
+            "[WEATHER] Values:"
+        )
+
+        print(
+            f"Temperature: "
+            f"{weather.temperature_2m}"
+        )
+
+        print(
+            f"Wind speed: "
+            f"{weather.wind_speed_10m}"
+        )
+
+        print(
+            f"Precipitation: "
+            f"{weather.precipitation}"
+        )
+
+        print(
+            f"Precipitation probability: "
+            f"{weather.precipitation_probability}"
+        )
+
+        print(
+            f"UV index: "
+            f"{weather.uv_index}"
+        )
+
+        print(
+            f"Weather code: "
+            f"{weather.weather_code}"
+        )
+
+        print(
+            "====================================\n"
+        )
+
+        # ----------------------------------------------------
         # SAVE WEATHER TO CACHE
         # ----------------------------------------------------
 
@@ -812,11 +857,8 @@ def get_weather(
         )
 
         print(
-
             "[WEATHER] Weather data retrieved:",
-
             weather,
-
         )
 
         return weather
