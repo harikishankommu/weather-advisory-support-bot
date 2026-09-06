@@ -148,3 +148,36 @@
   guidance: >
     Postpone outdoor exercise because rainfall may create slippery
     surfaces, reduced visibility, and unsafe conditions.
+
+
+# Normal / suitable outdoor exercise conditions
+
+- id: EX-005
+  category: outdoor_exercise
+  severity: low
+  priority: 10
+
+  description: >
+    Outdoor exercise conditions are generally suitable when no
+    higher-priority weather safety policy applies.
+
+  intent_keywords:
+    - exercise
+    - running
+    - jogging
+    - walking
+    - workout
+    - cycling
+    - biking
+    - bicycle
+    - hiking
+
+  weather_conditions:
+    temperature_2m:
+      operator: "<"
+      value: 40
+
+  guidance: >
+    Conditions appear generally suitable for outdoor activity.
+    Take normal precautions, stay hydrated, and remain aware of
+    changing local weather conditions.

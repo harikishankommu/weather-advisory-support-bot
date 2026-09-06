@@ -133,8 +133,8 @@ def select_best_sop(
     """
     Conflict resolution rule:
 
-    1. Higher severity wins.
-    2. If severity is the same, higher priority wins.
+    1. Higher priority wins.
+    2. If priority is the same, higher severity wins.
     """
 
     if not matches:
@@ -143,11 +143,11 @@ def select_best_sop(
     return max(
         matches,
         key=lambda sop: (
+            sop.priority,
             SEVERITY_RANK.get(
                 sop.severity.lower(),
                 0,
             ),
-            sop.priority,
         ),
     )
     
