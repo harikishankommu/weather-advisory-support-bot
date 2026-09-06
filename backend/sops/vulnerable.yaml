@@ -1,4 +1,6 @@
+# ============================================================
 # Child in extreme heat
+# ============================================================
 
 - id: VG-001
   category: vulnerable_groups
@@ -17,6 +19,9 @@
     - toddler
     - baby
 
+  user_conditions:
+    vulnerable_group: child
+
   weather_conditions:
     temperature_2m:
       operator: ">="
@@ -27,7 +32,9 @@
     and consider moving the activity to a cooler time.
 
 
+# ============================================================
 # Elderly person in extreme heat
+# ============================================================
 
 - id: VG-002
   category: vulnerable_groups
@@ -35,16 +42,22 @@
   priority: 90
 
   description: >
-    Older adults may face increased risk during periods of extreme
-    heat.
+    Elderly individuals may face increased health risks
+    during extreme heat conditions.
 
   intent_keywords:
     - elderly
     - senior
-    - old person
     - older adult
     - grandfather
     - grandmother
+    - outside
+    - outdoor
+    - walking
+    - walk
+
+  user_conditions:
+    vulnerable_group: elderly
 
   weather_conditions:
     temperature_2m:
@@ -52,11 +65,51 @@
       value: 38
 
   guidance: >
-    Limit outdoor activity for elderly individuals during extreme
-    heat and prefer cooler conditions where possible.
+    Avoid prolonged outdoor exposure during extreme heat.
+    If going outside is necessary, choose cooler hours,
+    stay hydrated, and take frequent breaks.
 
 
-# Pets in extreme heat
+# Elderly person - normal outdoor conditions
+
+- id: VG-005
+  category: vulnerable_groups
+  severity: low
+  priority: 10
+
+  description: >
+    Outdoor conditions are generally suitable for elderly individuals
+    when no higher-priority weather safety policy applies.
+
+  intent_keywords:
+    - elderly
+    - senior
+    - older adult
+    - grandfather
+    - grandmother
+    - outside
+    - outdoor
+    - walking
+    - walk
+
+  user_conditions:
+    vulnerable_group: elderly
+
+  weather_conditions:
+    temperature_2m:
+      operator: "<"
+      value: 38
+
+  guidance: >
+    Conditions appear generally suitable for going outside. Take normal
+    precautions, stay hydrated, avoid prolonged exposure during the
+    hottest part of the day, and remain aware of changing weather
+    conditions.
+
+
+# ============================================================
+# Pet in extreme heat
+# ============================================================
 
 - id: VG-003
   category: vulnerable_groups
@@ -74,6 +127,9 @@
     - cat
     - walk my dog
 
+  user_conditions:
+    vulnerable_group: pet
+
   weather_conditions:
     temperature_2m:
       operator: ">="
@@ -84,7 +140,9 @@
     and choose a cooler time for walks or exercise.
 
 
+# ============================================================
 # Vulnerable group in heavy rain
+# ============================================================
 
 - id: VG-004
   category: vulnerable_groups
@@ -104,6 +162,14 @@
     - pet
     - dog
     - baby
+    - grandmother
+    - grandfather
+
+  user_conditions:
+    vulnerable_group:
+      - child
+      - elderly
+      - pet
 
   weather_conditions:
     precipitation:

@@ -121,7 +121,12 @@ def find_matching_sops(
             sop,
         )
 
-        if intent_ok and weather_ok:
+        user_ok = user_conditions_match(
+            context,
+            sop,
+        )
+
+        if intent_ok and weather_ok and user_ok:
             matches.append(sop)
 
     return matches
@@ -152,11 +157,6 @@ def select_best_sop(
     )
     
 def match_sop_node(state: dict) -> dict:
-    """
-    LangGraph node that finds and selects
-    the best applicable SOP.
-    """
-
     from backend.loader import load_sops
 
     context = state["context"]
@@ -206,3 +206,38 @@ def match_sop_node(state: dict) -> dict:
         "matching_sops": matches,
         "selected_sop": selected_sop,
     }
+
+def user_conditions_match(
+    context: UserContext,
+    sop: SOP,
+) -> bool:
+    """
+    Check whether the user context satisfies
+    the user_conditions defined in the SOP.
+    """
+
+    if not sop.user_conditions:
+        return True
+
+    for field_name, expected_value in sop.user_conditions.items():
+
+        actual_value = getattr(
+            context,
+            field_name,
+            None,
+        )
+
+        if actual_value is None:
+            return False
+
+        if isinstance(expected_value, list):
+
+            if actual_value not in expected_value:
+                return False
+
+        else:
+
+            if actual_value != expected_value:
+                return False
+
+    return True
